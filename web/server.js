@@ -733,10 +733,27 @@ app.post("/getAccessibilityTree", async (req, res) => {
     // browserId = browserId.replace(/-/g, "");
     // pageId = pageId.replace(/-/g, "");
     // currentRound = currentRound.replace(/-/g, "");
+    // const fileName = `${browserId}@@${pageId}@@${currentRound}.png`;
+    // const filePath = path.join("/screenshots", fileName);
+
+    // await fs.writeFile(filePath, screenshotBuffer);
+
+    const path = require("path");
+    const fs = require("fs").promises;
+
+    const safeBaseDir = path.resolve("/screenshots");
+
     const fileName = `${browserId}@@${pageId}@@${currentRound}.png`;
-    const filePath = path.join("/screenshots", fileName);
+    const safeFileName = path.basename(fileName);
+
+    const filePath = path.join(safeBaseDir, safeFileName);
+
+    if (!filePath.startsWith(safeBaseDir)) {
+      throw new Error("the file path is not valid");
+    }
 
     await fs.writeFile(filePath, screenshotBuffer);
+
     const currentUrl = page.url();
     res.send({
       yaml: yamlWithPrefix,
@@ -1058,12 +1075,20 @@ app.post("/takeScreenshot", async (req, res) => {
 });
 
 app.post("/loadScreenshot", (req, res) => {
+  const path = require("path");
+  const fs = require("fs").promises;
+
   const { browserId, pageId, currentRound } = req.body;
-  // browserId = browserId.replace(/-/g, "");
-  // pageId = pageId.replace(/-/g, "");
-  // currentRound = currentRound.replace(/-/g, "");
+
   const fileName = `${browserId}@@${pageId}@@${currentRound}.png`;
-  const filePath = path.join("/screenshots", fileName);
+  const safeFileName = path.basename(fileName);
+
+  const safeBaseDir = path.resolve("/screenshots");
+  const filePath = path.join(safeBaseDir, safeFileName);
+
+  if (!filePath.startsWith(safeBaseDir)) {
+    throw new Error("the file path is not valid");
+  }
 
   res.sendFile(filePath, (err) => {
     if (err) {
